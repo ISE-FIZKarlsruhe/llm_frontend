@@ -1,5 +1,4 @@
-FROM python:3.11
-
+FROM python:3.9.7
 
 RUN mkdir -p /src
 ENV HOME=/src
