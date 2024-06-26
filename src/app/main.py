@@ -1,4 +1,4 @@
-import httpx, logging
+import httpx, logging, os
 from fastapi.responses import (
     HTMLResponse,
     JSONResponse,
@@ -26,6 +26,9 @@ else:
         format="%(asctime)s %(levelname)-8s %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
     )
 
+
+logging.debug("Starting Meta-Llama-3-70B-Instruct.Q4_0.llamafile")
+os.popen("/models/Meta-Llama-3-70B-Instruct.Q4_0.llamafile  --nobrowser -ngl 9999")
 
 app = FastAPI(openapi_url="/openapi")
 
