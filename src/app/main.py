@@ -1,17 +1,14 @@
-import httpx, logging, os
+import httpx, logging, os, time, json, sqlite3
 from fastapi.responses import (
     HTMLResponse,
-    JSONResponse,
-    RedirectResponse,
     Response,
-    PlainTextResponse,
 )
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.exception_handlers import http_exception_handler
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from fastapi import Depends, FastAPI, Request, HTTPException, File, UploadFile
-from .config import SOURCE_HOST, SOURCE_SCHEME, DEBUG
+from fastapi import FastAPI, Request
+from fastapi_utils.tasks import repeat_every
+from .config import SOURCE_HOST, SOURCE_SCHEME, DEBUG, LOG_PATH, LOGDB_PATH
 
 if DEBUG:
     logging.basicConfig(
@@ -25,6 +22,9 @@ else:
     logging.basicConfig(
         format="%(asctime)s %(levelname)-8s %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
     )
+
+if not os.path.exists(LOG_PATH):
+    os.makedirs(LOG_PATH)
 
 
 logging.debug("Starting Meta-Llama-3-70B-Instruct.Q4_0.llamafile")
@@ -61,6 +61,8 @@ async def proxy(request: Request, path: str):
     hdrs.append(("host", SOURCE_HOST))
 
     logging.debug(f"Requesting {url} with headers {hdrs}")
+    request_body = await request.body()
+
     response = await client.request(
         method=request.method,
         url=url,
@@ -69,9 +71,44 @@ async def proxy(request: Request, path: str):
         timeout=340,
     )
 
+    log = {
+        "timestamp": time.time(),
+        "url": url,
+        "method": request.method,
+        "request_headers": dict(request.headers),
+        "request_body": request_body.decode("utf8"),
+        "response": response.content.decode("utf8"),
+        "status_code": response.status_code,
+        "response_headers": dict(response.headers),
+    }
+    open(os.path.join(LOG_PATH, f"{time.time()}.log"), "w").write(json.dumps(log))
+
     # Create a response
     return Response(
         content=response.content,
         status_code=response.status_code,
         headers=dict(response.headers),
     )
+
+
+@app.on_event("startup")
+@repeat_every(seconds=60)
+def ingest_logs():
+    if not LOGDB_PATH:
+        logging.error("LOGDB_PATH not set")
+        return
+    logs = os.listdir(LOG_PATH)
+    buf = []
+    for log in logs:
+        if log.endswith(".log"):
+            log_contents = open(os.path.join(LOG_PATH, log)).read()
+            buf.append((log.replace(".log", ""), log_contents))
+    try:
+        DB = sqlite3.connect(LOGDB_PATH)
+        DB.executemany("INSERT OR IGNORE INTO logs VALUES (?, ?)", buf)
+        DB.commit()
+    finally:
+        for log in logs:
+            os.remove(os.path.join(LOG_PATH, log))
+    if len(logs) > 0:
+        logging.debug(f"Ingested {len(logs)} logs")
