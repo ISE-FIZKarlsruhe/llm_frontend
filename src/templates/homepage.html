@@ -1,5 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
-&nbsp;
+
+{% if request.user.is_authenticated %}
+    <h1>Your tokens:</h1>
+    {% for token in request.user.tokens %}
+        <p>{{token}}</p>
+    {% endfor %}
+{% endif %}
+
 {% endblock content %}

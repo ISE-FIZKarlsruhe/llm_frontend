@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<form>
+    <label for="emailInput">Email:</label>
+    <input type="text" id="emailInput" name="email">
+    <label for="passwordInput">Password:</label>
+    <input type="password" id="passwordInput" name="password">
+</form>
+
+<a href="#" id="loginButton">Login</a>
+
+<div id="reminderMsg"></div>
+
+<script type="text/javascript">
+window.onload = function() {
+    document.getElementById("emailInput").focus()
+
+
+    async function doLogin(username, password) {
+        var response = await fetch("/token", {
+            method: 'POST', mode: 'cors', body: "username="+ username+"&password="+password, credentials: 'same-origin',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+        })
+        if(response.status === 200) {
+            var data = await response.json()
+            var age = 60*60*24*30 // 30 days age
+            document.cookie = "access_token="+data.access_token+"; samesite=strict max-age="+age
+            if(data.return_url) {
+                document.location = data.return_url
+            } else {
+                document.location = "/"
+            }
+
+        } else {
+            document.getElementById("reminderMsg").innerHTML = "<b>Alas, that email and password combination did not work<b>"
+            document.getElementById("emailInput").focus()
+        }
+    }
+
+    document.getElementById("loginButton").addEventListener("click", function(event) {
+        event.preventDefault()
+        var emailAddress = document.getElementById("emailInput").value
+        var aPassword = document.getElementById("passwordInput").value
+        if(emailAddress && aPassword) {
+            doLogin(emailAddress, aPassword)
+        } else {
+            document.getElementById("reminderMsg").innerHTML = "<b>Make sure you fill in both an email address and a password<b>"
+            document.getElementById("emailInput").focus()
+        }
+    })
+};
+
+</script>
+
+{% endblock content %}

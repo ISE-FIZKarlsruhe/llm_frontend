@@ -1,4 +1,6 @@
 import httpx, logging, os, time, json, sqlite3
+from typing import Annotated
+
 from fastapi.responses import (
     HTMLResponse,
     Response,
@@ -6,7 +8,7 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi_utils.tasks import repeat_every
 from .config import SOURCE_HOST, SOURCE_SCHEME, DEBUG, LOG_PATH, LOGDB_PATH
 
@@ -30,8 +32,8 @@ if not os.path.exists(LOG_PATH):
 logging.debug("Starting Meta-Llama-3-70B-Instruct.Q4_0.llamafile")
 os.popen("/models/Meta-Llama-3-70B-Instruct.Q4_0.llamafile  --nobrowser -ngl 9999")
 
-app = FastAPI(openapi_url="/openapi")
 
+app = FastAPI(openapi_url="/openapi")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
