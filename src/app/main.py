@@ -1,4 +1,4 @@
-import httpx, logging, os, time, json, sqlite3
+import httpx, logging, os, time, json, sqlite3, random
 from typing import Annotated
 
 from fastapi.responses import (
@@ -29,8 +29,15 @@ if not os.path.exists(LOG_PATH):
     os.makedirs(LOG_PATH)
 
 
-logging.debug("Starting Meta-Llama-3-70B-Instruct.Q4_0.llamafile")
-os.popen("/models/Meta-Llama-3-70B-Instruct.Q4_0.llamafile  --nobrowser -ngl 9999")
+wait = 3 / random.randint(1, 5)
+logging.debug(f"Wait for {wait} s")
+time.sleep(wait)
+if not os.path.exists("/LLAMA_LOCK"):
+    logging.debug(f"Starting Meta-Llama-3-70B-Instruct.Q4_0.llamafile")
+    open("/LLAMA_LOCK", "w").write("LOCKED")
+    os.popen("/models/Meta-Llama-3-70B-Instruct.Q4_0.llamafile  --nobrowser -ngl 9999")
+else:
+    logging.debug("/LLAMA_LOCK exists, skipping llamafile start")
 
 
 app = FastAPI(openapi_url="/openapi")
