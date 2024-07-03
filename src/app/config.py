@@ -31,5 +31,6 @@ ADMINDB.executescript(
     );
     CREATE UNIQUE INDEX IF NOT EXISTS users_email_uindex ON users (email);
     CREATE TABLE IF NOT EXISTS tokens (user TEXT, token TEXT);
+    PRAGMA journal_mode = WAL;
 """
 )

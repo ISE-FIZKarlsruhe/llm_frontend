@@ -52,10 +52,23 @@ async def homepage(request: Request):
     return response
 
 
+def check_authorization_header(request: Request):
+    if "Authorization" not in request.headers:
+        raise HTTPException(status_code=401, detail="Authorization header missing")
+
+    token = request.headers["Authorization"].replace("Bearer ", "")
+    if verify_auth_token(token):
+        return request.headers["Authorization"]
+
+    raise HTTPException(status_code=401, detail=f"Invalid token: {token}")
+
+
 @app.api_route(
     "/v1/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
 )
-async def proxy(request: Request, path: str):
+async def proxy(
+    request: Request, path: str, auth: str = Depends(check_authorization_header)
+):
     url = f"{SOURCE_SCHEME}://{SOURCE_HOST}/v1/{path}"
     client = httpx.AsyncClient()
 
@@ -74,6 +87,7 @@ async def proxy(request: Request, path: str):
     )
 
     log = {
+        "auth": auth,
         "timestamp": time.time(),
         "url": url,
         "method": request.method,

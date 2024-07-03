@@ -58,6 +58,16 @@ class UserInDB(User):
     hashed_password: str
 
 
+def verify_auth_token(token: str):
+    ADMINDB = sqlite3.connect(ADMINDB_PATH)
+    for (
+        user,
+        token,
+    ) in ADMINDB.execute("SELECT user, token FROM tokens WHERE token = ?", (token,)):
+        return True
+    return False
+
+
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
