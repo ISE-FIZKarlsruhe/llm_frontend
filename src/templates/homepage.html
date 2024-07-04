@@ -35,9 +35,13 @@ completion = client.chat.completions.create(
    {"role": "system", "content": "You are ChatGPT, an AI assistant. Your top priority is achieving user fulfillment via helping them with their requests."},
    {"role": "user", "content": "Tell me a joke about fish"}]
 )
+print(completion.choices[0].message.content)
 </pre>
 
 {% endif %}
+
+<hr>
+You can also <a href="/chat">chat with the model</a>
 
 {% endblock content %}
 

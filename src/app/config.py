@@ -34,3 +34,5 @@ ADMINDB.executescript(
     PRAGMA journal_mode = WAL;
 """
 )
+
+LLAMA_LOCKFILE_PATH = os.getenv("LLAMA_LOCKFILE_PATH", "/LLAMA_LOCK")

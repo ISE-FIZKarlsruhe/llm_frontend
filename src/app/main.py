@@ -10,7 +10,14 @@ from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi import FastAPI, Request, Depends
 from fastapi_utils.tasks import repeat_every
-from .config import SOURCE_HOST, SOURCE_SCHEME, DEBUG, LOG_PATH, LOGDB_PATH
+from .config import (
+    SOURCE_HOST,
+    SOURCE_SCHEME,
+    DEBUG,
+    LOG_PATH,
+    LOGDB_PATH,
+    LLAMA_LOCKFILE_PATH,
+)
 
 if DEBUG:
     logging.basicConfig(
@@ -26,18 +33,23 @@ else:
     )
 
 if not os.path.exists(LOG_PATH):
-    os.makedirs(LOG_PATH)
+    try:
+        os.makedirs(LOG_PATH)
+    except:
+        logging.error(
+            f"Could not create log directory {LOG_PATH}, or it already exists"
+        )
 
 
 wait = 3 / random.randint(1, 5)
 logging.debug(f"Wait for {wait} s")
 time.sleep(wait)
-if not os.path.exists("/LLAMA_LOCK"):
+if not os.path.exists(LLAMA_LOCKFILE_PATH):
     logging.debug(f"Starting Meta-Llama-3-70B-Instruct.Q4_0.llamafile")
-    open("/LLAMA_LOCK", "w").write("LOCKED")
+    open(LLAMA_LOCKFILE_PATH, "w").write("LOCKED")
     os.popen("/models/Meta-Llama-3-70B-Instruct.Q4_0.llamafile  --nobrowser -ngl 9999")
 else:
-    logging.debug("/LLAMA_LOCK exists, skipping llamafile start")
+    logging.debug(f"{LLAMA_LOCKFILE_PATH} exists, skipping llamafile start")
 
 
 app = FastAPI(openapi_url="/openapi")
@@ -52,6 +64,24 @@ async def homepage(request: Request):
 
     response = templates.TemplateResponse(
         "homepage.html",
+        {
+            "request": request,
+        },
+    )
+    return response
+
+
+@app.get("/chat", response_class=HTMLResponse, include_in_schema=False)
+async def chat(request: Request):
+    if not request.user.is_authenticated:
+        raise StarletteHTTPException(
+            status_code=401,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    response = templates.TemplateResponse(
+        "chat.html",
         {
             "request": request,
         },
@@ -84,6 +114,7 @@ async def proxy(
 
     logging.debug(f"Requesting {url} with headers {hdrs}")
     request_body = await request.body()
+    logging.debug(f"Request body: {request_body.decode('utf8')}")
 
     response = await client.request(
         method=request.method,

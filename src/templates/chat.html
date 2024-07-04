@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Chat with the AI</h1>
+
+<textarea id="system" rows="4"  style="width: 50vw">
+You are ChatGPT, an AI assistant. Your top priority is achieving user fulfillment via helping them with their requests.
+</textarea>
+
+<textarea id="prompt" placeholder="Your prompt message" rows="10" style="width: 50vw">
+</textarea>
+
+<a href="#" id="chat" style="display: block; margin-top: 2vh">Chat</a>
+
+<div id="response" style="width: 50vw; margin-left: 3ch"></div>
+
+<script>
+document.TOKEN = '{{request.user.tokens.0}}'
+</script>
+<script src="/static/chat.js"></script>
+{% endblock content %}
