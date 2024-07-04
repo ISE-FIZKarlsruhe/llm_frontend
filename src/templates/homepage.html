@@ -2,6 +2,8 @@
 
 {% block content %}
 
+<h3>Current model: Meta-Llama-3-70B-Instruct.Q4_0</h3>
+
 {% if request.user.is_authenticated %}
     <h1>Your tokens:</h1>
     {% for token in request.user.tokens %}
