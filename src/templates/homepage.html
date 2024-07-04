@@ -7,6 +7,37 @@
     {% for token in request.user.tokens %}
         <p>{{token}}</p>
     {% endfor %}
+
+<h2>Examples</h2>
+
+Calling the API using cURL on a command line:
+
+<pre>
+curl https://llm.ise.fiz-karlsruhe.de/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer {{ request.user.tokens.0 }}" \
+  -d '{
+     "messages": [{"role": "user", "content": "Tell me a joke about fish"}]
+   }'
+</pre>
+
+<hr>
+
+Calling the API using Python: 
+(you need to install the OpenAI Python package first: `pip install openai`)
+
+<pre>
+from openai import OpenAI
+client = OpenAI(base_url="https://llm.ise.fiz-karlsruhe.de/v1/", api_key = "{{ request.user.tokens.0 }}")
+completion = client.chat.completions.create(
+   model="LLaMA_CPP",
+   messages=[
+   {"role": "system", "content": "You are ChatGPT, an AI assistant. Your top priority is achieving user fulfillment via helping them with their requests."},
+   {"role": "user", "content": "Tell me a joke about fish"}]
+)
+</pre>
+
 {% endif %}
 
 {% endblock content %}
+
