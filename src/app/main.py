@@ -121,7 +121,7 @@ async def proxy(
         url=url,
         headers=hdrs,
         content=await request.body(),
-        timeout=340,
+        timeout=600,
     )
 
     log = {
